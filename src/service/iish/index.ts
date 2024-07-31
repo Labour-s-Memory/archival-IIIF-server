@@ -12,6 +12,7 @@ export default async function processDip({collectionPath}: CollectionPathParams)
         const {rootItem, childItems, textItems} = await processCollection(collectionPath, {
             type: 'custom',
             customStructMapId: 'structMap_iish',
+            isFile: (label: string, parents: string[]) => parents[0] !== 'transcription' && !parents[0].startsWith('translation_'),
             isText: (label: string, parents: string[]) => parents[0] === 'transcription' || parents[0].startsWith('translation_'),
             getTypeAndLang: (label: string, parents: string[]) => ({
                 type: parents[0].startsWith('translation_') ? 'translation' : 'transcription',
@@ -25,7 +26,9 @@ export default async function processDip({collectionPath}: CollectionPathParams)
             },
             withRootCustomForText: (rootCustom: Element, fileId: string) => {
                 const fptrs = rootCustom.find<Element>(`./mets:div[@TYPE="page"]/mets:fptr[@FILEID="${fileId}"]/../mets:fptr`, ns);
-                return fptrs.map(fptrElem => fptrElem.attr('FILEID')?.value() || null).filter(id => id !== null) as string[];
+                return fptrs
+                    .map(fptrElem => fptrElem.attr('FILEID')?.value())
+                    .find(id => id && id !== fileId) as string;
             },
         });
 
